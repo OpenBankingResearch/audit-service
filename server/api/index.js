@@ -54,10 +54,17 @@ exports.register = function (server, options, next) {
         message.log.id = getUniqueId();
 
         createIndex(elasticConfig.indexAudit);
-        addToIndex(elasticConfig.indexAudit, message.log);
+        addToIndex(elasticConfig.indexAudit, message.log, function (err, data) {
 
-        return next({
-            msg: 'audit saved'
+            if (err) {
+                return next(new Error(err));
+            } else {
+                return next({
+                    msg: 'audit saved',
+                    data: data
+                });
+            }
+
         });
 
     });
@@ -120,7 +127,7 @@ exports.register = function (server, options, next) {
         }, callback);
     }
 
-    function addToIndex(indexName, data) {
+    function addToIndex(indexName, data, callback) {
         console.log('addToIndex');
         client.index({
             index: indexName,
@@ -129,8 +136,12 @@ exports.register = function (server, options, next) {
             body: data
         }, function (err, data) {
 
-            console.log('data added to elastic')
+            if (err) {
+                callback(err);
+            }
 
+            callback(null, data)
+            console.log('data added to elastic', data)
         });
     }
 
